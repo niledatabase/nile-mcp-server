@@ -18,29 +18,21 @@ cd nile-mcp-server
 
 # Install dependencies
 npm install
+
+# Build the project
+npm run build
 ```
 
 ## Configuration
 
-Create a `.env` file in the root directory with your Nile API key:
+Create a `.env` file in the root directory with your Nile credentials:
 
 ```env
 NILE_API_KEY=your_api_key_here
+NILE_WORKSPACE_SLUG=your_workspace_slug
 ```
 
-## Usage
-
-### Starting the Server
-
-```bash
-# Build the project
-npm run build
-
-# Start the server
-npm start your_nile_api_key
-```
-
-### Using with Claude Desktop
+## Testing with Claude Desktop
 
 1. Open Claude Desktop
 2. Go to Settings > MCP Servers
@@ -49,28 +41,88 @@ npm start your_nile_api_key
 ```json
 {
   "name": "Nile Database",
+  "description": "Create and manage Nile databases",
   "transport": {
     "type": "stdio",
-    "command": "npm start your_nile_api_key"
+    "command": "node dist/index.js"
+  },
+  "env": {
+    "NILE_API_KEY": "your_api_key_here",
+    "NILE_WORKSPACE_SLUG": "your_workspace_slug"
   }
 }
 ```
 
-### Available Tools
+4. Test the server by asking Claude to create a database:
+```
+Please create a new database named "my-test-db" in the AWS_US_WEST_2 region.
+```
 
-#### create-database
+## Testing with Node.js Script
+
+Create a test script (e.g., `test.mjs`):
+
+```javascript
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Start the MCP server process
+const serverProcess = spawn('node', [join(__dirname, 'dist/index.js')], {
+  env: {
+    ...process.env,
+    NILE_API_KEY: 'your_api_key_here',
+    NILE_WORKSPACE_SLUG: 'your_workspace_slug'
+  },
+  stdio: ['pipe', 'pipe', 'pipe']
+});
+
+// Example function call message
+const message = {
+  type: 'function_call',
+  function: {
+    name: 'create-database',
+    arguments: {
+      name: 'my-test-db',
+      region: 'AWS_US_WEST_2'
+    }
+  }
+};
+
+// Send the message to the server
+serverProcess.stdin.write(JSON.stringify(message) + '\n');
+
+// Handle server response
+serverProcess.stdout.on('data', (data) => {
+  console.log('Server response:', JSON.parse(data.toString()));
+  serverProcess.kill(); // Clean up
+});
+
+// Handle errors
+serverProcess.stderr.on('data', (data) => {
+  console.error('Error:', data.toString());
+  serverProcess.kill();
+});
+```
+
+Run the test script:
+```bash
+node test.mjs
+```
+
+## Available Tools
+
+### create-database
 
 Creates a new Nile database.
 
 Parameters:
-- `name` (string, required): Name of the database
+- `name` (string, required): Name of the database (must be less than 64 characters, unique within workspace)
 - `region` (string, required): Region where the database should be created
-
-Example usage in Claude:
-
-```
-Please create a new database named "my-app" in the us-east-1 region using the create-database tool.
-```
+  - `AWS_US_WEST_2` - AWS in US West (Oregon)
+  - `AWS_EU_CENTRAL_1` - AWS in Europe (Frankfurt)
 
 ## Development
 
@@ -79,54 +131,19 @@ Please create a new database named "my-app" in the us-east-1 region using the cr
 ```
 nile-mcp-server/
 ├── src/
-│   ├── server.ts       # Main server implementation
-│   ├── index.ts        # Entry point
-│   └── __tests__/      # Test files
-├── dist/              # Compiled JavaScript
-├── package.json
-└── tsconfig.json
+│   ├── server.ts     # MCP server implementation
+│   ├── index.ts      # Entry point
+│   ├── types.ts      # Type definitions
+│   └── __tests__/    # Test files
+├── dist/            # Compiled JavaScript
+└── package.json
 ```
 
 ### Running Tests
 
 ```bash
-# Run tests
 npm test
-
-# Run tests in watch mode
-npm test -- --watch
 ```
-
-### Building
-
-```bash
-# Build the project
-npm run build
-```
-
-## Technical Details
-
-### Dependencies
-
-- `@modelcontextprotocol/sdk`: MCP protocol implementation
-- `zod`: Runtime type checking and validation
-- `typescript`: Type safety and compilation
-- `jest` and `ts-jest`: Testing framework
-
-### Type Safety
-
-The server uses TypeScript and Zod for comprehensive type safety:
-- Compile-time type checking with TypeScript
-- Runtime validation of tool parameters with Zod schemas
-- Type-safe responses using the MCP protocol
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 

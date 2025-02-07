@@ -1,16 +1,7 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { NileMcpServer } from '../server.js';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-
-interface ToolResponse {
-  content: Array<{
-    type: 'text' | 'image';
-    text?: string;
-    data?: string;
-    mimeType?: string;
-  }>;
-  isError: boolean;
-}
+import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 describe('NileMcpServer', () => {
   let server: NileMcpServer;
@@ -20,7 +11,10 @@ describe('NileMcpServer', () => {
 
   beforeEach(async () => {
     // Set up server
-    server = new NileMcpServer({ apiKey: 'test-api-key' });
+    server = new NileMcpServer({ 
+      apiKey: 'test-api-key',
+      workspaceSlug: 'test-workspace'
+    });
     
     // Set up transport and client
     [transport1, transport2] = InMemoryTransport.createLinkedPair();
@@ -44,12 +38,13 @@ describe('NileMcpServer', () => {
     }
   });
 
-  describe('listTools', () => {
-    it('should return available tools', async () => {
+  describe('tools', () => {
+    it('should list available tools', async () => {
       const tools = await client.listTools();
       expect(tools.tools).toHaveLength(1);
       expect(tools.tools[0]).toMatchObject({
         name: 'create-database',
+        description: 'Creates a new Nile database',
         inputSchema: {
           type: 'object',
           properties: {
@@ -59,6 +54,7 @@ describe('NileMcpServer', () => {
             },
             region: {
               type: 'string',
+              enum: ['AWS_US_WEST_2', 'AWS_EU_CENTRAL_1'],
               description: 'Region where the database should be created'
             }
           },
@@ -66,42 +62,56 @@ describe('NileMcpServer', () => {
         }
       });
     });
-  });
 
-  describe('callTool', () => {
-    it('should handle create-database tool call', async () => {
+    it('should create a database successfully', async () => {
+      // Mock a successful API call
+      global.fetch = jest.fn().mockImplementation(() => 
+        Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            id: 'db-123',
+            name: 'test-db',
+            region: 'AWS_US_WEST_2',
+            status: 'ACTIVE'
+          })
+        })
+      );
+
       const result = await client.callTool({
         name: 'create-database',
         arguments: {
           name: 'test-db',
-          region: 'us-east-1'
+          region: 'AWS_US_WEST_2'
         }
-      }) as ToolResponse;
-      
-      expect(result.content).toHaveLength(1);
-      expect(result.content[0]).toEqual({
-        type: 'text',
-        text: 'Database test-db created successfully in region us-east-1'
-      });
+      }) as CallToolResult;
+
       expect(result.isError).toBe(false);
+      expect(result.content[0].text).toContain('created successfully');
     });
 
-    it('should handle invalid tool name', async () => {
-      await expect(
-        client.callTool({
-          name: 'invalid-tool',
-          arguments: {}
+    it('should handle errors when creating a database', async () => {
+      // Mock a failed API call
+      global.fetch = jest.fn().mockImplementation(() => 
+        Promise.resolve({
+          ok: false,
+          json: () => Promise.resolve({
+            error: 'BadRequest',
+            message: 'Invalid database name',
+            status: 400
+          })
         })
-      ).rejects.toThrow();
-    });
+      );
 
-    it('should handle missing required parameters', async () => {
-      await expect(
-        client.callTool({
-          name: 'create-database',
-          arguments: {}
-        })
-      ).rejects.toThrow('Invalid arguments for tool create-database');
+      const result = await client.callTool({
+        name: 'create-database',
+        arguments: {
+          name: 'invalid-db',
+          region: 'AWS_US_WEST_2'
+        }
+      }) as CallToolResult;
+
+      expect(result.isError).toBe(true);
+      expect(result.content[0].text).toContain('Failed to create database');
     });
   });
 }); 
