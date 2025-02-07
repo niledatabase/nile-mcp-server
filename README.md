@@ -32,97 +32,72 @@ NILE_API_KEY=your_api_key_here
 NILE_WORKSPACE_SLUG=your_workspace_slug
 ```
 
-## Testing with Claude Desktop
+## Using with Claude Desktop
 
-1. Open Claude Desktop
-2. Go to Settings > MCP Servers
-3. Add a new server with the following configuration:
+### Setup
+
+1. Install [Claude Desktop](https://claude.ai/desktop) if you haven't already
+2. Build the project:
+   ```bash
+   npm run build
+   ```
+3. Open Claude Desktop
+4. Go to Settings > MCP Servers
+5. Click "Add Server"
+6. Add the following configuration:
 
 ```json
 {
-  "name": "Nile Database",
-  "description": "Create and manage Nile databases",
-  "transport": {
-    "type": "stdio",
-    "command": "node dist/index.js"
-  },
-  "env": {
-    "NILE_API_KEY": "your_api_key_here",
-    "NILE_WORKSPACE_SLUG": "your_workspace_slug"
+  "mcpServers": {
+    "nile-database": {
+      "command": "node",
+      "args": [
+        "/path/to/your/nile-mcp-server/dist/index.js"
+      ],
+      "env": {
+        "NILE_API_KEY": "your_api_key_here",
+        "NILE_WORKSPACE_SLUG": "your_workspace_slug"
+      }
+    }
   }
 }
 ```
 
-4. Test the server by asking Claude to create a database:
-```
-Please create a new database named "my-test-db" in the AWS_US_WEST_2 region.
-```
+Replace:
+- `/path/to/your/nile-mcp-server` with the absolute path to your project directory
+- `your_api_key_here` with your Nile API key
+- `your_workspace_slug` with your Nile workspace slug
 
-## Testing with Node.js Script
+### Usage
 
-Create a test script (e.g., `test.mjs`):
+Once configured, you can interact with the Nile database directly in Claude Desktop. Here are some example commands:
 
-```javascript
-import { spawn } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+1. Create a new database:
+   ```
+   Please create a new database named "my-app-db" in the AWS_US_WEST_2 region.
+   ```
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+2. Check available regions:
+   ```
+   What regions are available for creating a Nile database?
+   ```
 
-// Start the MCP server process
-const serverProcess = spawn('node', [join(__dirname, 'dist/index.js')], {
-  env: {
-    ...process.env,
-    NILE_API_KEY: 'your_api_key_here',
-    NILE_WORKSPACE_SLUG: 'your_workspace_slug'
-  },
-  stdio: ['pipe', 'pipe', 'pipe']
-});
+Available regions:
+- `AWS_US_WEST_2` - US West (Oregon)
+- `AWS_EU_CENTRAL_1` - Europe (Frankfurt)
 
-// Example function call message
-const message = {
-  type: 'function_call',
-  function: {
-    name: 'create-database',
-    arguments: {
-      name: 'my-test-db',
-      region: 'AWS_US_WEST_2'
-    }
-  }
-};
+### Troubleshooting
 
-// Send the message to the server
-serverProcess.stdin.write(JSON.stringify(message) + '\n');
+1. If Claude says it can't access the tools:
+   - Check that the server path in the configuration is correct
+   - Ensure the project is built (`npm run build`)
+   - Verify your API key and workspace slug are correct
+   - Restart Claude Desktop
 
-// Handle server response
-serverProcess.stdout.on('data', (data) => {
-  console.log('Server response:', JSON.parse(data.toString()));
-  serverProcess.kill(); // Clean up
-});
-
-// Handle errors
-serverProcess.stderr.on('data', (data) => {
-  console.error('Error:', data.toString());
-  serverProcess.kill();
-});
-```
-
-Run the test script:
-```bash
-node test.mjs
-```
-
-## Available Tools
-
-### create-database
-
-Creates a new Nile database.
-
-Parameters:
-- `name` (string, required): Name of the database (must be less than 64 characters, unique within workspace)
-- `region` (string, required): Region where the database should be created
-  - `AWS_US_WEST_2` - AWS in US West (Oregon)
-  - `AWS_EU_CENTRAL_1` - AWS in Europe (Frankfurt)
+2. If database creation fails:
+   - Check your API key permissions
+   - Ensure the database name is unique in your workspace
+   - Verify the region is one of the supported options
 
 ## Development
 
@@ -153,4 +128,4 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [Nile Database](https://thenile.dev)
-- [Claude Desktop](https://claude.ai) 
+- [Claude Desktop](https://claude.ai/desktop) 
