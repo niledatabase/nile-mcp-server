@@ -41,16 +41,16 @@ export const executeSqlSchema = z.object({
 // Logging utility
 const log = {
   info: (message: string, data?: any) => {
-    console.log(`[INFO] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    process.stdout.write(`[INFO] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
   },
   error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${message}`, error ? JSON.stringify(error, null, 2) : '');
+    process.stderr.write(`[ERROR] ${message}${error ? ' ' + JSON.stringify(error, null, 2) : ''}\n`);
   },
   api: (method: string, url: string, status: number, data?: any) => {
-    console.log(`[API] ${method} ${url} - Status: ${status}`, data ? JSON.stringify(data, null, 2) : '');
+    process.stdout.write(`[API] ${method} ${url} - Status: ${status}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
   },
   sql: (query: string, duration: number, result?: any) => {
-    console.log(`[SQL] Query executed in ${duration}ms: ${query}`, result ? JSON.stringify(result, null, 2) : '');
+    process.stdout.write(`[SQL] Query executed in ${duration}ms: ${query}${result ? ' ' + JSON.stringify(result, null, 2) : ''}\n`);
   }
 };
 
@@ -166,14 +166,21 @@ export const getDatabase = async (
   context: ToolContext
 ): Promise<CallToolResult> => {
   try {
-    const response = await fetch(`${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.name}`, {
+    log.info('Getting database details', { name: args.name });
+    
+    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.name}`;
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
       }
     });
 
+    const data = await response.json();
+    log.api('GET', url, response.status, data);
+
     if (!response.ok) {
-      const error: NileError = await response.json();
+      const error: NileError = data;
+      log.error('Failed to get database details', error);
       return {
         content: [{
           type: 'text',
@@ -183,7 +190,8 @@ export const getDatabase = async (
       };
     }
 
-    const database: NileDatabase = await response.json();
+    const database: NileDatabase = data;
+    log.info('Database details retrieved successfully', database);
     return {
       content: [{
         type: 'text',
@@ -198,6 +206,7 @@ export const getDatabase = async (
       isError: false
     };
   } catch (error) {
+    log.error('Error getting database details', error);
     return {
       content: [{
         type: 'text',
@@ -213,15 +222,22 @@ export const deleteDatabase = async (
   context: ToolContext
 ): Promise<CallToolResult> => {
   try {
-    const response = await fetch(`${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.name}`, {
+    log.info('Deleting database', { name: args.name });
+    
+    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.name}`;
+    const response = await fetch(url, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
       }
     });
 
+    const data = await response.json();
+    log.api('DELETE', url, response.status, data);
+
     if (!response.ok) {
-      const error: NileError = await response.json();
+      const error: NileError = data;
+      log.error('Failed to delete database', error);
       return {
         content: [{
           type: 'text',
@@ -231,6 +247,7 @@ export const deleteDatabase = async (
       };
     }
 
+    log.info('Database deleted successfully', { name: args.name });
     return {
       content: [{
         type: 'text',
@@ -239,6 +256,7 @@ export const deleteDatabase = async (
       isError: false
     };
   } catch (error) {
+    log.error('Error deleting database', error);
     return {
       content: [{
         type: 'text',
@@ -254,14 +272,21 @@ export const listCredentials = async (
   context: ToolContext
 ): Promise<CallToolResult> => {
   try {
-    const response = await fetch(`${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`, {
+    log.info('Listing credentials', { databaseName: args.databaseName });
+    
+    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
       }
     });
 
+    const data = await response.json();
+    log.api('GET', url, response.status, data);
+
     if (!response.ok) {
-      const error: NileError = await response.json();
+      const error: NileError = data;
+      log.error('Failed to list credentials', error);
       return {
         content: [{
           type: 'text',
@@ -271,11 +296,12 @@ export const listCredentials = async (
       };
     }
 
-    const credentials: DatabaseCredential[] = await response.json();
+    const credentials: DatabaseCredential[] = data;
+    log.info(`Found ${credentials.length} credentials for database ${args.databaseName}`);
     return {
       content: [{
         type: 'text',
-        text: `Found ${credentials.length} credentials for database "${args.databaseName}":\n\n` +
+        text: `Found ${credentials.length} credentials:\n\n` +
           credentials.map(cred => 
             `- ID: ${cred.id}\n  Username: ${cred.username}\n  Created: ${cred.created}`
           ).join('\n')
@@ -283,6 +309,7 @@ export const listCredentials = async (
       isError: false
     };
   } catch (error) {
+    log.error('Error listing credentials', error);
     return {
       content: [{
         type: 'text',
@@ -298,7 +325,10 @@ export const createCredential = async (
   context: ToolContext
 ): Promise<CallToolResult> => {
   try {
-    const response = await fetch(`${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`, {
+    log.info('Creating credential', { databaseName: args.databaseName });
+    
+    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
@@ -306,8 +336,12 @@ export const createCredential = async (
       }
     });
 
+    const data = await response.json();
+    log.api('POST', url, response.status, data);
+
     if (!response.ok) {
-      const error: NileError = await response.json();
+      const error: NileError = data;
+      log.error('Failed to create credential', error);
       return {
         content: [{
           type: 'text',
@@ -317,7 +351,13 @@ export const createCredential = async (
       };
     }
 
-    const credential: DatabaseCredential = await response.json();
+    const credential: DatabaseCredential = data;
+    log.info('Credential created successfully', {
+      id: credential.id,
+      username: credential.username,
+      created: credential.created
+    });
+    
     return {
       content: [{
         type: 'text',
@@ -330,6 +370,7 @@ export const createCredential = async (
       isError: false
     };
   } catch (error) {
+    log.error('Error creating credential', error);
     return {
       content: [{
         type: 'text',
@@ -342,14 +383,21 @@ export const createCredential = async (
 
 export const listRegions = async (context: ToolContext): Promise<CallToolResult> => {
   try {
-    const response = await fetch(`${context.baseUrl}/regions`, {
+    log.info('Listing available regions');
+    
+    const url = `${context.baseUrl}/regions`;
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
       }
     });
 
+    const data = await response.json();
+    log.api('GET', url, response.status, data);
+
     if (!response.ok) {
-      const error: NileError = await response.json();
+      const error: NileError = data;
+      log.error('Failed to list regions', error);
       return {
         content: [{
           type: 'text',
@@ -359,7 +407,8 @@ export const listRegions = async (context: ToolContext): Promise<CallToolResult>
       };
     }
 
-    const regions: string[] = await response.json();
+    const regions: string[] = data;
+    log.info(`Found ${regions.length} available regions`, { regions });
     return {
       content: [{
         type: 'text',
@@ -369,6 +418,7 @@ export const listRegions = async (context: ToolContext): Promise<CallToolResult>
       isError: false
     };
   } catch (error) {
+    log.error('Error listing regions', error);
     return {
       content: [{
         type: 'text',

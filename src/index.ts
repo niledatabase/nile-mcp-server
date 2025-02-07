@@ -6,10 +6,10 @@ import dotenv from 'dotenv';
 // Logging utility
 const log = {
   info: (message: string, data?: any) => {
-    console.log(`[STARTUP] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    process.stdout.write(`[STARTUP] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
   },
   error: (message: string, error?: any) => {
-    console.error(`[ERROR] ${message}`, error ? JSON.stringify(error, null, 2) : '');
+    process.stderr.write(`[ERROR] ${message}${error ? ' ' + JSON.stringify(error, null, 2) : ''}\n`);
   }
 };
 

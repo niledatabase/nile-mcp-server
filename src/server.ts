@@ -20,7 +20,7 @@ import {
 // Logging utility
 const log = {
   info: (message: string, data?: any) => {
-    console.log(`[SERVER] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+    process.stdout.write(`[SERVER] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
   }
 };
 
