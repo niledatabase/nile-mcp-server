@@ -28,4 +28,27 @@ export interface NileError {
   error: string;
   message: string;
   status: number;
+}
+
+export interface DatabaseCredential {
+  id: string;
+  username: string;
+  password?: string;  // Only present in create response
+  created: string;
+}
+
+export interface SqlQueryResult {
+  rows: Record<string, any>[];
+  rowCount: number | null;
+  fields: Array<{
+    name: string;
+    dataTypeID: number;
+  }>;
+}
+
+export interface SqlQueryError extends NileError {
+  code?: string;
+  position?: string;
+  detail?: string;
+  hint?: string;
 } 

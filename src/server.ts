@@ -1,20 +1,28 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
-import { NileDatabase, NileError, ToolResult } from './types.js';
-import { RequestHandlerExtra } from '@modelcontextprotocol/sdk/shared/protocol.js';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import {
+  createDatabase,
+  listDatabases,
+  getDatabase,
+  deleteDatabase,
+  listCredentials,
+  createCredential,
+  listRegions,
+  createDatabaseSchema,
+  getDatabaseSchema,
+  deleteDatabaseSchema,
+  listCredentialsSchema,
+  createCredentialSchema,
+  executeSQL,
+  executeSqlSchema,
+  type ToolContext
+} from './tools.js';
 
-const ListToolsRequestSchema = z.object({
-  method: z.literal('tools/list')
-});
-
-const CallToolRequestSchema = z.object({
-  method: z.literal('tools/call'),
-  params: z.object({
-    name: z.string(),
-    arguments: z.record(z.unknown())
-  })
-});
+// Logging utility
+const log = {
+  info: (message: string, data?: any) => {
+    console.log(`[SERVER] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+  }
+};
 
 export interface NileServerOptions {
   apiKey: string;
@@ -25,6 +33,7 @@ export class NileMcpServer extends McpServer {
   private apiKey: string;
   private workspaceSlug: string;
   private readonly baseUrl = 'https://global.thenile.dev';
+  private toolContext: ToolContext;
 
   constructor(options: NileServerOptions) {
     super({
@@ -35,64 +44,98 @@ export class NileMcpServer extends McpServer {
       }
     });
 
+    log.info('Initializing Nile MCP Server', {
+      workspaceSlug: options.workspaceSlug,
+      baseUrl: this.baseUrl
+    });
+
     this.apiKey = options.apiKey;
     this.workspaceSlug = options.workspaceSlug;
+    this.toolContext = {
+      apiKey: this.apiKey,
+      workspaceSlug: this.workspaceSlug,
+      baseUrl: this.baseUrl
+    };
+
     this.setupTools();
+    log.info('Tools initialized successfully');
+  }
+
+  async connect(transport: any): Promise<void> {
+    log.info('Connecting to transport...');
+    await super.connect(transport);
+    log.info('Connected successfully');
+  }
+
+  async close(): Promise<void> {
+    log.info('Closing server connection...');
+    await super.close();
+    log.info('Server connection closed');
   }
 
   private setupTools(): void {
-    const createDatabaseSchema = z.object({
-      name: z.string().describe('Name of the database'),
-      region: z.enum(['AWS_US_WEST_2', 'AWS_EU_CENTRAL_1']).describe('Region where the database should be created')
-    });
+    log.info('Setting up tools...');
 
+    // Database Management
     this.tool(
       'create-database',
       'Creates a new Nile database',
       createDatabaseSchema.shape,
-      async (args: z.infer<typeof createDatabaseSchema>, extra: RequestHandlerExtra): Promise<CallToolResult> => {
-        try {
-          const response = await fetch(`${this.baseUrl}/workspaces/${this.workspaceSlug}/databases`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${this.apiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              databaseName: args.name,
-              region: args.region
-            })
-          });
-
-          if (!response.ok) {
-            const error: NileError = await response.json();
-            return {
-              content: [{
-                type: 'text',
-                text: `Failed to create database: ${error.message}`
-              }],
-              isError: true
-            };
-          }
-
-          const database: NileDatabase = await response.json();
-          return {
-            content: [{
-              type: 'text',
-              text: `Database "${database.name}" created successfully with ID ${database.id} in region ${database.region}. Status: ${database.status}`
-            }],
-            isError: false
-          };
-        } catch (error) {
-          return {
-            content: [{
-              type: 'text',
-              text: error instanceof Error ? error.message : 'Unknown error occurred while creating database'
-            }],
-            isError: true
-          };
-        }
-      }
+      (args) => createDatabase(args, this.toolContext)
     );
+
+    this.tool(
+      'list-databases',
+      'Lists all databases in the workspace',
+      {},
+      () => listDatabases(this.toolContext)
+    );
+
+    this.tool(
+      'get-database',
+      'Gets details of a specific database',
+      getDatabaseSchema.shape,
+      (args) => getDatabase(args, this.toolContext)
+    );
+
+    this.tool(
+      'delete-database',
+      'Deletes a database',
+      deleteDatabaseSchema.shape,
+      (args) => deleteDatabase(args, this.toolContext)
+    );
+
+    // Credential Management
+    this.tool(
+      'list-credentials',
+      'Lists all credentials for a database',
+      listCredentialsSchema.shape,
+      (args) => listCredentials(args, this.toolContext)
+    );
+
+    this.tool(
+      'create-credential',
+      'Creates a new credential for a database',
+      createCredentialSchema.shape,
+      (args) => createCredential(args, this.toolContext)
+    );
+
+    // Region Management
+    this.tool(
+      'list-regions',
+      'Lists all available regions for creating databases',
+      {},
+      () => listRegions(this.toolContext)
+    );
+
+    // SQL Query Execution
+    this.tool(
+      'execute-sql',
+      'Executes a SQL query on a Nile database',
+      executeSqlSchema.shape,
+      (args) => executeSQL(args, this.toolContext)
+    );
+
+    log.info('All tools registered successfully');
   }
 }
