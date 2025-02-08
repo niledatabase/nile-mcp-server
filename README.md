@@ -29,6 +29,48 @@ npm install
 npm run build
 ```
 
+## Starting the Server
+
+There are several ways to start the server:
+
+1. **Direct Node Execution**:
+   ```bash
+   node dist/index.js
+   ```
+
+2. **NPM Script** (if configured in package.json):
+   ```bash
+   npm start
+   ```
+
+3. **Development Mode** (with auto-rebuild):
+   ```bash
+   npm run dev
+   ```
+
+The server will start and listen for MCP protocol messages. You should see startup logs indicating:
+- Environment variables loaded
+- Server instance created
+- Tools initialized
+- Transport connection established
+
+To stop the server, press `Ctrl+C`.
+
+### Verifying the Server is Running
+
+When the server starts successfully, you should see logs similar to:
+```
+[info] Starting Nile MCP Server...
+[info] Loading environment variables...
+[info] Environment variables loaded successfully
+[info] Creating server instance...
+[info] Tools initialized successfully
+[info] Setting up stdio transport...
+[info] Server started successfully
+```
+
+If you see these logs, the server is ready to accept commands from Claude Desktop.
+
 ## Configuration
 
 Create a `.env` file in the root directory with your Nile credentials:
@@ -248,12 +290,28 @@ npm install
 # Build the project
 npm run build
 
+# Start the server in production mode
+node dist/index.js
+
+# Start the server using npm script
+npm start
+
+# Start in development mode with auto-rebuild
+npm run dev
+
 # Run tests
 npm test
-
-# Start the server
-npm start
 ```
+
+### Development Scripts
+
+The following npm scripts are available:
+- `npm run build`: Compiles TypeScript to JavaScript
+- `npm start`: Starts the server in production mode
+- `npm run dev`: Starts the server in development mode with auto-rebuild
+- `npm test`: Runs the test suite
+- `npm run lint`: Runs ESLint for code quality
+- `npm run clean`: Removes build artifacts
 
 ### Testing
 
