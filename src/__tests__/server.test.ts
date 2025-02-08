@@ -60,7 +60,7 @@ describe('NileMcpServer', () => {
   describe('tools', () => {
     it('should list available tools', async () => {
       const tools = await client.listTools();
-      expect(tools.tools).toHaveLength(8);
+      expect(tools.tools).toHaveLength(6);
       
       // Database Management Tools
       expect(tools.tools).toContainEqual({
@@ -130,49 +130,20 @@ describe('NileMcpServer', () => {
         }
       });
 
-      // Credential Management Tools
+      // Connection String Tool
       expect(tools.tools).toContainEqual({
-        name: 'list-credentials',
-        description: 'Lists all credentials for a database',
+        name: 'get-connection-string',
+        description: 'Gets a PostgreSQL connection string with fresh credentials',
         inputSchema: {
           $schema: 'http://json-schema.org/draft-07/schema#',
           type: 'object',
           properties: {
             databaseName: {
               type: 'string',
-              description: 'Name of the database to list credentials for'
+              description: 'Name of the database to get connection string for'
             }
           },
           required: ['databaseName'],
-          additionalProperties: false
-        }
-      });
-
-      expect(tools.tools).toContainEqual({
-        name: 'create-credential',
-        description: 'Creates a new credential for a database',
-        inputSchema: {
-          $schema: 'http://json-schema.org/draft-07/schema#',
-          type: 'object',
-          properties: {
-            databaseName: {
-              type: 'string',
-              description: 'Name of the database to create credentials for'
-            }
-          },
-          required: ['databaseName'],
-          additionalProperties: false
-        }
-      });
-
-      // Region Management Tool
-      expect(tools.tools).toContainEqual({
-        name: 'list-regions',
-        description: 'Lists all available regions for creating databases',
-        inputSchema: {
-          $schema: 'http://json-schema.org/draft-07/schema#',
-          type: 'object',
-          properties: {},
           additionalProperties: false
         }
       });
@@ -193,9 +164,9 @@ describe('NileMcpServer', () => {
               type: 'string',
               description: 'SQL query to execute'
             },
-            credentialId: {
+            connectionString: {
               type: 'string',
-              description: 'Optional credential ID to use for the connection'
+              description: 'Connection string to use for the query'
             }
           },
           required: ['databaseName', 'query'],
@@ -204,96 +175,97 @@ describe('NileMcpServer', () => {
       });
     });
 
-    it('should create a database successfully', async () => {
-      // Mock a successful API call
-      global.fetch = jest.fn().mockImplementation(() => 
-        Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve({
-            id: 'db-123',
-            name: 'test-db',
-            region: 'AWS_US_WEST_2',
-            status: 'ACTIVE'
-          })
-        })
-      );
-
-      const result = await client.callTool({
-        name: 'create-database',
-        arguments: {
+    describe('Connection String Management', () => {
+      it('should get connection string successfully', async () => {
+        const mockDatabase: NileDatabase = {
+          id: 'db-123',
           name: 'test-db',
-          region: 'AWS_US_WEST_2'
-        }
-      }) as CallToolResult;
+          region: 'AWS_US_WEST_2',
+          status: 'READY',
+          apiHost: 'api.test.thenile.dev',
+          dbHost: 'us-west-2.db.thenile.dev',
+          workspace: {
+            name: 'test',
+            slug: 'test-workspace'
+          }
+        };
 
-      expect(result.isError).toBe(false);
-      expect(result.content[0].text).toContain('created successfully');
-    });
-
-    it('should handle errors when creating a database', async () => {
-      // Mock a failed API call
-      global.fetch = jest.fn().mockImplementation(() => 
-        Promise.resolve({
-          ok: false,
-          json: () => Promise.resolve({
-            error: 'BadRequest',
-            message: 'Invalid database name',
-            status: 400
-          })
-        })
-      );
-
-      const result = await client.callTool({
-        name: 'create-database',
-        arguments: {
-          name: 'invalid-db',
-          region: 'AWS_US_WEST_2'
-        }
-      }) as CallToolResult;
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('Failed to create database');
-    });
-
-    describe('SQL Query Execution', () => {
-      const mockDatabase: NileDatabase = {
-        id: 'db-123',
-        name: 'test-db',
-        region: 'AWS_US_WEST_2',
-        status: 'READY',
-        apiHost: 'api.test.thenile.dev',
-        dbHost: 'db.test.thenile.dev',
-        workspace: {
-          name: 'test',
-          slug: 'test-workspace'
-        }
-      };
-
-      const mockCredential: DatabaseCredential = {
-        id: 'cred-123',
-        username: 'test-user',
-        password: 'test-password',
-        created: new Date().toISOString()
-      };
-
-      beforeEach(() => {
-        // Reset fetch mock
-        global.fetch = jest.fn();
-      });
-
-      it('should execute SQL query with existing credential', async () => {
-        // Mock database and credential fetch
         global.fetch = jest.fn()
           .mockImplementationOnce(() => Promise.resolve({
             ok: true,
-            json: () => Promise.resolve(mockDatabase)
+            json: () => Promise.resolve({
+              id: 'cred-123',
+              password: 'test-password'
+            })
           }))
           .mockImplementationOnce(() => Promise.resolve({
             ok: true,
-            json: () => Promise.resolve(mockCredential)
+            json: () => Promise.resolve(mockDatabase)
           }));
 
-        // Mock successful query
+        const result = await client.callTool({
+          name: 'get-connection-string',
+          arguments: {
+            databaseName: 'test-db'
+          }
+        }) as CallToolResult;
+
+        expect(result.isError).toBe(false);
+        expect(result.content[0].text).toContain('postgres://cred-123:test-password@us-west-2.db.thenile.dev:5432/test-db');
+      });
+
+      it('should handle connection string errors', async () => {
+        global.fetch = jest.fn()
+          .mockImplementationOnce(() => Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({
+              error: 'NotFound',
+              message: 'Database not found',
+              status: 404
+            })
+          }));
+
+        const result = await client.callTool({
+          name: 'get-connection-string',
+          arguments: {
+            databaseName: 'nonexistent-db'
+          }
+        }) as CallToolResult;
+
+        expect(result.isError).toBe(true);
+        expect(result.content[0].text).toContain('Failed to create credentials: Database not found');
+      });
+    });
+
+    describe('SQL Query Execution', () => {
+      beforeEach(() => {
+        // Mock credential response
+        global.fetch = jest.fn()
+          .mockImplementationOnce(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              id: 'cred-123',
+              password: 'test-password'
+            })
+          }))
+          .mockImplementationOnce(() => Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              id: 'db-123',
+              name: 'test-db',
+              region: 'AWS_US_WEST_2',
+              status: 'READY',
+              apiHost: 'api.test.thenile.dev',
+              dbHost: 'us-west-2.db.thenile.dev',
+              workspace: {
+                name: 'test',
+                slug: 'test-workspace'
+              }
+            })
+          }));
+      });
+
+      it('should execute SQL query successfully', async () => {
         pgClient.query.mockResolvedValueOnce({
           rows: [{ id: 1, name: 'Test' }],
           rowCount: 1,
@@ -307,8 +279,7 @@ describe('NileMcpServer', () => {
           name: 'execute-sql',
           arguments: {
             databaseName: 'test-db',
-            query: 'SELECT * FROM test',
-            credentialId: 'cred-123'
+            query: 'SELECT * FROM test'
           }
         }) as CallToolResult;
 
@@ -318,78 +289,7 @@ describe('NileMcpServer', () => {
         expect(result.content[0].text).toContain('1 rows returned');
       });
 
-      it('should create new credential if none provided', async () => {
-        // Mock database fetch and credential creation
-        global.fetch = jest.fn()
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockDatabase)
-          }))
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockCredential)
-          }));
-
-        // Mock empty result
-        pgClient.query.mockResolvedValueOnce({
-          rows: [],
-          rowCount: 0,
-          fields: []
-        });
-
-        const result = await client.callTool({
-          name: 'execute-sql',
-          arguments: {
-            databaseName: 'test-db',
-            query: 'CREATE TABLE test (id INT)'
-          }
-        }) as CallToolResult;
-
-        expect(result.isError).toBe(false);
-        expect(result.content[0].text).toContain('0 rows returned');
-      });
-
-      it('should handle database connection errors', async () => {
-        // Mock database fetch success but connection error
-        global.fetch = jest.fn()
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockDatabase)
-          }))
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockCredential)
-          }));
-
-        // Mock connection error
-        pgClient.connect.mockRejectedValueOnce(new Error('Connection refused'));
-
-        const result = await client.callTool({
-          name: 'execute-sql',
-          arguments: {
-            databaseName: 'test-db',
-            query: 'SELECT * FROM test'
-          }
-        }) as CallToolResult;
-
-        expect(result.isError).toBe(true);
-        expect(result.content[0].text).toContain('Connection refused');
-      });
-
       it('should handle SQL syntax errors', async () => {
-        // Mock database and credential fetch
-        global.fetch = jest.fn()
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockDatabase)
-          }))
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockCredential)
-          }));
-
-        // Mock syntax error
-        pgClient.connect.mockResolvedValueOnce(undefined);
         pgClient.query.mockRejectedValueOnce({
           message: 'syntax error at or near "SLECT"',
           position: '1',
@@ -410,19 +310,6 @@ describe('NileMcpServer', () => {
       });
 
       it('should handle empty result sets', async () => {
-        // Mock database and credential fetch
-        global.fetch = jest.fn()
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockDatabase)
-          }))
-          .mockImplementationOnce(() => Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockCredential)
-          }));
-
-        // Mock empty result
-        pgClient.connect.mockResolvedValueOnce(undefined);
         pgClient.query.mockResolvedValueOnce({
           rows: [],
           rowCount: 0,
@@ -439,64 +326,6 @@ describe('NileMcpServer', () => {
 
         expect(result.isError).toBe(false);
         expect(result.content[0].text).toContain('0 rows returned');
-      });
-    });
-
-    describe('Credential Management', () => {
-      it('should list credentials successfully', async () => {
-        const mockCredentials: DatabaseCredential[] = [
-          {
-            id: 'cred-1',
-            username: 'user1',
-            created: new Date().toISOString()
-          },
-          {
-            id: 'cred-2',
-            username: 'user2',
-            created: new Date().toISOString()
-          }
-        ];
-
-        global.fetch = jest.fn().mockImplementation(() => 
-          Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve(mockCredentials)
-          })
-        );
-
-        const result = await client.callTool({
-          name: 'list-credentials',
-          arguments: {
-            databaseName: 'test-db'
-          }
-        }) as CallToolResult;
-
-        expect(result.isError).toBe(false);
-        expect(result.content[0].text).toContain('user1');
-        expect(result.content[0].text).toContain('user2');
-      });
-
-      it('should handle credential listing errors', async () => {
-        global.fetch = jest.fn().mockImplementation(() => 
-          Promise.resolve({
-            ok: false,
-            json: () => Promise.resolve({
-              error: 'NotFound',
-              message: 'Database not found',
-              status: 404
-            })
-          })
-        );
-
-        const result = await client.callTool({
-          name: 'list-credentials',
-          arguments: {
-            databaseName: 'nonexistent-db'
-          }
-        }) as CallToolResult;
-
-        expect(result.isError).toBe(true);
-        expect(result.content[0].text).toContain('Database not found');
       });
     });
   });

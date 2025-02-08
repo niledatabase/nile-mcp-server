@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { NileDatabase, NileError, DatabaseCredential, SqlQueryResult, SqlQueryError } from './types.js';
 import { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import pg from 'pg';
+import { log } from './logger.js';
 
 export interface ToolContext {
   apiKey: string;
@@ -23,36 +24,16 @@ export const deleteDatabaseSchema = z.object({
   name: z.string().describe('Name of the database to delete')
 });
 
-export const listCredentialsSchema = z.object({
-  databaseName: z.string().describe('Name of the database to list credentials for')
-});
-
-export const createCredentialSchema = z.object({
-  databaseName: z.string().describe('Name of the database to create credentials for')
+export const getConnectionStringSchema = z.object({
+  databaseName: z.string().describe('Name of the database to get connection string for')
 });
 
 // SQL Query Schema
 export const executeSqlSchema = z.object({
   databaseName: z.string().describe('Name of the database to query'),
   query: z.string().describe('SQL query to execute'),
-  credentialId: z.string().optional().describe('Optional credential ID to use for the connection')
+  connectionString: z.string().describe('Connection string to use for the query').optional()
 });
-
-// Logging utility
-const log = {
-  info: (message: string, data?: any) => {
-    process.stdout.write(`[INFO] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
-  },
-  error: (message: string, error?: any) => {
-    process.stderr.write(`[ERROR] ${message}${error ? ' ' + JSON.stringify(error, null, 2) : ''}\n`);
-  },
-  api: (method: string, url: string, status: number, data?: any) => {
-    process.stdout.write(`[API] ${method} ${url} - Status: ${status}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
-  },
-  sql: (query: string, duration: number, result?: any) => {
-    process.stdout.write(`[SQL] Query executed in ${duration}ms: ${query}${result ? ' ' + JSON.stringify(result, null, 2) : ''}\n`);
-  }
-};
 
 // Tool Implementations
 export const createDatabase = async (
@@ -267,68 +248,16 @@ export const deleteDatabase = async (
   }
 };
 
-export const listCredentials = async (
-  args: z.infer<typeof listCredentialsSchema>,
+export const getConnectionString = async (
+  args: z.infer<typeof getConnectionStringSchema>,
   context: ToolContext
 ): Promise<CallToolResult> => {
   try {
-    log.info('Listing credentials', { databaseName: args.databaseName });
+    log.info('Getting connection string', { databaseName: args.databaseName });
     
-    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${context.apiKey}`,
-      }
-    });
-
-    const data = await response.json();
-    log.api('GET', url, response.status, data);
-
-    if (!response.ok) {
-      const error: NileError = data;
-      log.error('Failed to list credentials', error);
-      return {
-        content: [{
-          type: 'text',
-          text: `Failed to list credentials: ${error.message}`
-        }],
-        isError: true
-      };
-    }
-
-    const credentials: DatabaseCredential[] = data;
-    log.info(`Found ${credentials.length} credentials for database ${args.databaseName}`);
-    return {
-      content: [{
-        type: 'text',
-        text: `Found ${credentials.length} credentials:\n\n` +
-          credentials.map(cred => 
-            `- ID: ${cred.id}\n  Username: ${cred.username}\n  Created: ${cred.created}`
-          ).join('\n')
-      }],
-      isError: false
-    };
-  } catch (error) {
-    log.error('Error listing credentials', error);
-    return {
-      content: [{
-        type: 'text',
-        text: error instanceof Error ? error.message : 'Unknown error occurred while listing credentials'
-      }],
-      isError: true
-    };
-  }
-};
-
-export const createCredential = async (
-  args: z.infer<typeof createCredentialSchema>,
-  context: ToolContext
-): Promise<CallToolResult> => {
-  try {
-    log.info('Creating credential', { databaseName: args.databaseName });
-    
-    const url = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
-    const response = await fetch(url, {
+    // First, create credentials for the database
+    const credentialUrl = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
+    const credentialResponse = await fetch(credentialUrl, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${context.apiKey}`,
@@ -336,107 +265,36 @@ export const createCredential = async (
       }
     });
 
-    const data = await response.json();
-    log.api('POST', url, response.status, data);
+    const credentialData = await credentialResponse.json();
+    log.api('POST', credentialUrl, credentialResponse.status, credentialData);
 
-    if (!response.ok) {
-      const error: NileError = data;
-      log.error('Failed to create credential', error);
+    if (!credentialResponse.ok) {
+      const error: NileError = credentialData;
+      log.error('Failed to create credentials', error);
       return {
         content: [{
           type: 'text',
-          text: `Failed to create credential: ${error.message}`
+          text: `Failed to create credentials: ${error.message}`
+        }],
+        isError: true
+      };
+    }
+    log.info('Credential data', credentialData);
+    const user_id = credentialData.id;
+    const password = credentialData.password;
+
+    if (!password) {
+      log.error('Password not found in credential response');
+      return {
+        content: [{
+          type: 'text',
+          text: 'Failed to get credentials: Password not found in response'
         }],
         isError: true
       };
     }
 
-    const credential: DatabaseCredential = data;
-    log.info('Credential created successfully', {
-      id: credential.id,
-      username: credential.username,
-      created: credential.created
-    });
-    
-    return {
-      content: [{
-        type: 'text',
-        text: `Database credential created successfully:\n` +
-          `ID: ${credential.id}\n` +
-          `Username: ${credential.username}\n` +
-          `Password: ${credential.password}\n\n` +
-          `IMPORTANT: Save this password now. It will not be shown again.`
-      }],
-      isError: false
-    };
-  } catch (error) {
-    log.error('Error creating credential', error);
-    return {
-      content: [{
-        type: 'text',
-        text: error instanceof Error ? error.message : 'Unknown error occurred while creating credential'
-      }],
-      isError: true
-    };
-  }
-};
-
-export const listRegions = async (context: ToolContext): Promise<CallToolResult> => {
-  try {
-    log.info('Listing available regions');
-    
-    const url = `${context.baseUrl}/regions`;
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${context.apiKey}`,
-      }
-    });
-
-    const data = await response.json();
-    log.api('GET', url, response.status, data);
-
-    if (!response.ok) {
-      const error: NileError = data;
-      log.error('Failed to list regions', error);
-      return {
-        content: [{
-          type: 'text',
-          text: `Failed to list regions: ${error.message}`
-        }],
-        isError: true
-      };
-    }
-
-    const regions: string[] = data;
-    log.info(`Found ${regions.length} available regions`, { regions });
-    return {
-      content: [{
-        type: 'text',
-        text: `Available regions:\n\n` +
-          regions.map(region => `- ${region}`).join('\n')
-      }],
-      isError: false
-    };
-  } catch (error) {
-    log.error('Error listing regions', error);
-    return {
-      content: [{
-        type: 'text',
-        text: error instanceof Error ? error.message : 'Unknown error occurred while listing regions'
-      }],
-      isError: true
-    };
-  }
-};
-
-export const executeSQL = async (
-  args: z.infer<typeof executeSqlSchema>,
-  context: ToolContext
-): Promise<CallToolResult> => {
-  try {
-    log.info('Executing SQL query', { database: args.databaseName, query: args.query });
-    
-    // Get database details
+    // Next, get database details to know the region
     const dbUrl = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}`;
     const dbResponse = await fetch(dbUrl, {
       headers: {
@@ -459,82 +317,81 @@ export const executeSQL = async (
       };
     }
 
-    const database: NileDatabase = dbData;
+    // Construct connection string using credential details and database region
+    const region = dbData.region.replace('AWS_', '').replace(/_/g, '-').toLowerCase();
+    const host = `${region.toLowerCase()}.db.thenile.dev`;
+    const connectionString = `postgres://${user_id}:${password}@${host}:5432/${args.databaseName}`;
+    log.info('Connection string generated', { connectionString });
     
-    // Get or create credentials
-    let credential: DatabaseCredential;
-    if (args.credentialId) {
-      log.info('Using existing credential', { credentialId: args.credentialId });
-      const credUrl = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials/${args.credentialId}`;
-      const credResponse = await fetch(credUrl, {
-        headers: {
-          'Authorization': `Bearer ${context.apiKey}`,
-        }
-      });
+    return {
+      content: [{
+        type: 'text',
+        text: `Connection string:\n${connectionString}\n\nIMPORTANT: This connection string contains credentials that will not be shown again.`
+      }],
+      isError: false
+    };
+  } catch (error) {
+    log.error('Error getting connection string', error);
+    return {
+      content: [{
+        type: 'text',
+        text: error instanceof Error ? error.message : 'Unknown error occurred while getting connection string'
+      }],
+      isError: true
+    };
+  }
+};
 
-      const credData = await credResponse.json();
-      log.api('GET', credUrl, credResponse.status, credData);
-
-      if (!credResponse.ok) {
-        const error: NileError = credData;
-        log.error('Failed to get credential', error);
-        return {
-          content: [{
-            type: 'text',
-            text: `Failed to get credential: ${error.message}`
-          }],
-          isError: true
-        };
-      }
-      credential = credData;
-    } else {
-      log.info('Creating new credential');
-      const credUrl = `${context.baseUrl}/workspaces/${context.workspaceSlug}/databases/${args.databaseName}/credentials`;
-      const credResponse = await fetch(credUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${context.apiKey}`,
-          'Content-Type': 'application/json',
-        }
-      });
-
-      const credData = await credResponse.json();
-      log.api('POST', credUrl, credResponse.status, credData);
-
-      if (!credResponse.ok) {
-        const error: NileError = credData;
-        log.error('Failed to create credential', error);
-        return {
-          content: [{
-            type: 'text',
-            text: `Failed to create credential: ${error.message}`
-          }],
-          isError: true
-        };
-      }
-      credential = credData;
-    }
-
-    if (!credential.password) {
-      log.error('No password available for credential');
-      return {
+export const executeSQL = async (
+  args: z.infer<typeof executeSqlSchema>,
+  context: ToolContext
+): Promise<CallToolResult> => {
+  try {
+    log.info('Executing SQL query', { database: args.databaseName, query: args.query });
+    
+    let connResult;
+    if (args.connectionString) {
+      connResult = {
         content: [{
           type: 'text',
-          text: 'No password available for the credential. Please create a new credential.'
+          text: `Connection string:\n${args.connectionString}\n\nIMPORTANT: This connection string contains credentials that will not be shown again.`
         }],
-        isError: true
+        isError: false
       };
+    } else {
+      connResult = await getConnectionString({ databaseName: args.databaseName }, context);
+      if (connResult.isError) {
+        return connResult;
+      }
     }
 
-    // Connect to database
-    log.info('Connecting to database', { host: database.dbHost, database: database.name });
+    // Extract connection string from the result
+    const resultText = connResult.content[0].text as string;
+    const lines = resultText.split('\n');
+    const connectionString = lines[1].trim(); // The connection string is on the first line
+    
+    // Extract user id:password and host from the connection string
+    const [protocol, userPasswordHost] = connectionString.split('://');
+    const [userPassword, hostDbname] = userPasswordHost.split('@');
+    const [user, password] = userPassword.split(':');
+    const [hostPort, dbname] = hostDbname.split('/');
+    const [host, port] = hostPort.split(':');
+    log.info('User', user);
+    log.info('Password', password);
+    log.info('Host', host);
+    log.info('Port', port);
+    log.info('Database', dbname);
+    
+    // Create client with connection string
     const client = new pg.Client({
-      host: database.dbHost,
-      port: 5432,
-      database: database.name,
-      user: credential.username,
-      password: credential.password,
-      ssl: true
+      user: user,
+      password: password,
+      host: host,
+      port: parseInt(port),
+      database: dbname,
+      ssl: {
+        rejectUnauthorized: false
+      }
     });
 
     try {

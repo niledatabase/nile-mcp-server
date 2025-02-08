@@ -140,13 +140,14 @@ The server provides the following tools for interacting with Nile databases:
    - Parameters:
      - `databaseName` (string): Name of the database to query
      - `query` (string): SQL query to execute
-     - `credentialId` (string, optional): Specific credential ID to use for the connection
-   - Returns: Query results in a formatted table with column headers and row count
+     - `connectionString` (string, optional): Pre-existing connection string to use for the query
+   - Returns: Query results formatted as a markdown table with column headers and row count
    - Features:
      - Automatic credential management (creates new if not specified)
      - Secure SSL connection to database
      - Results formatted as markdown tables
      - Detailed error messages with hints
+     - Support for using existing connection strings
    - Example: "Execute SELECT * FROM users LIMIT 5 on database 'my-app'"
 
 ### Example Usage
@@ -160,17 +161,15 @@ Can you list all my databases?
 Get the details for database "my-app".
 Delete the database named "test-db".
 
-# Credential Management
-List all credentials for database "my-app".
-Create new credentials for database "my-app".
-
-# Region Information
-What regions are available for creating databases?
+# Connection String Management
+Get a connection string for database "my-app".
+# Connection string format: postgres://<user>:<password>@<region>.db.thenile.dev:5432/<database>
+# Example: postgres://cred-123:password@us-west-2.db.thenile.dev:5432/my-app
 
 # SQL Queries
 Execute SELECT * FROM users LIMIT 5 on database "my-app"
 Run this query on my-app database: SELECT COUNT(*) FROM orders WHERE status = 'completed'
-Using credential abc-123, execute this query on my-app: SELECT * FROM products WHERE price > 100
+Using connection string "postgres://user:pass@host:5432/db", execute this query on my-app: SELECT * FROM products WHERE price > 100
 ```
 
 ### Response Format
@@ -178,6 +177,7 @@ Using credential abc-123, execute this query on my-app: SELECT * FROM products W
 All tools return responses in a standardized format:
 - Success responses include relevant data and confirmation messages
 - Error responses include detailed error messages and HTTP status codes
+- SQL query results are formatted as markdown tables
 - All responses are formatted for easy reading in Claude Desktop
 
 ### Error Handling
@@ -188,6 +188,7 @@ The server handles various error scenarios:
 - Invalid database names or regions
 - Missing required parameters
 - Database operation failures
+- SQL syntax errors with helpful hints
 - Rate limiting and API restrictions
 
 ### Troubleshooting
@@ -214,28 +215,68 @@ The server handles various error scenarios:
 ```
 nile-mcp-server/
 ├── src/
-│   ├── server.ts     # MCP server implementation
-│   ├── tools.ts      # Tool implementations
-│   ├── types.ts      # Type definitions
-│   ├── index.ts      # Entry point
-│   └── __tests__/    # Test files
-├── dist/            # Compiled JavaScript
-└── package.json
+│   ├── server.ts      # MCP server implementation
+│   ├── tools.ts       # Tool implementations
+│   ├── types.ts       # Type definitions
+│   ├── logger.ts      # Logging utilities
+│   ├── index.ts       # Entry point
+│   └── __tests__/     # Test files
+│       └── server.test.ts
+├── dist/             # Compiled JavaScript
+├── logs/            # Log files directory
+├── .env             # Environment configuration
+├── .gitignore       # Git ignore file
+├── package.json     # Project dependencies
+└── tsconfig.json    # TypeScript configuration
 ```
 
-### Running Tests
+### Key Files
 
+- `server.ts`: Main server implementation with tool registration and transport handling
+- `tools.ts`: Implementation of all database operations and SQL query execution
+- `types.ts`: TypeScript interfaces for database operations and responses
+- `logger.ts`: Structured logging with daily rotation and debug support
+- `index.ts`: Server startup and environment configuration
+- `server.test.ts`: Comprehensive test suite for all functionality
+
+### Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build the project
+npm run build
+
+# Run tests
+npm test
+
+# Start the server
+npm start
+```
+
+### Testing
+
+The project includes a comprehensive test suite that covers:
+- Tool registration and schema validation
+- Database management operations
+- Connection string generation
+- SQL query execution and error handling
+- Response formatting and error cases
+
+Run the tests with:
 ```bash
 npm test
 ```
 
-### Type Definitions
+### Logging
 
-The project includes TypeScript interfaces for:
-- Database operations
-- Credential management
-- Error handling
-- Tool responses
+The server uses structured logging with the following features:
+- Daily rotating log files
+- Separate debug logs
+- JSON formatted logs with timestamps
+- Console output for development
+- Log categories: info, error, debug, api, sql, startup
 
 ## License
 

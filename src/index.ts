@@ -2,21 +2,12 @@
 import { NileMcpServer } from './server.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import dotenv from 'dotenv';
+import { log } from './logger.js';
 
-// Logging utility
-const log = {
-  info: (message: string, data?: any) => {
-    process.stdout.write(`[STARTUP] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
-  },
-  error: (message: string, error?: any) => {
-    process.stderr.write(`[ERROR] ${message}${error ? ' ' + JSON.stringify(error, null, 2) : ''}\n`);
-  }
-};
-
-log.info('Starting Nile MCP Server...');
+log.startup('Starting Nile MCP Server...');
 
 // Load environment variables from .env file
-log.info('Loading environment variables...');
+log.startup('Loading environment variables...');
 dotenv.config();
 
 const apiKey = process.env.NILE_API_KEY;
@@ -32,27 +23,27 @@ if (!workspaceSlug) {
   process.exit(1);
 }
 
-log.info('Environment variables loaded successfully', {
+log.startup('Environment variables loaded successfully', {
   workspaceSlug,
   apiKeyPresent: !!apiKey
 });
 
 // Create and start server
-log.info('Creating server instance...');
+log.startup('Creating server instance...');
 const server = new NileMcpServer({
   apiKey,
   workspaceSlug
 });
 
 // Set up stdio transport
-log.info('Setting up stdio transport...');
+log.startup('Setting up stdio transport...');
 const transport = new StdioServerTransport();
 
 async function main() {
   try {
-    log.info('Connecting server to transport...');
+    log.startup('Connecting server to transport...');
     await server.connect(transport);
-    log.info('Server started successfully');
+    log.startup('Server started successfully');
   } catch (error) {
     log.error('Server error:', error);
     process.exit(1);

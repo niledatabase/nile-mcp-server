@@ -4,25 +4,16 @@ import {
   listDatabases,
   getDatabase,
   deleteDatabase,
-  listCredentials,
-  createCredential,
-  listRegions,
+  getConnectionString,
+  executeSQL,
   createDatabaseSchema,
   getDatabaseSchema,
   deleteDatabaseSchema,
-  listCredentialsSchema,
-  createCredentialSchema,
-  executeSQL,
+  getConnectionStringSchema,
   executeSqlSchema,
   type ToolContext
 } from './tools.js';
-
-// Logging utility
-const log = {
-  info: (message: string, data?: any) => {
-    process.stdout.write(`[SERVER] ${message}${data ? ' ' + JSON.stringify(data, null, 2) : ''}\n`);
-  }
-};
+import { log } from './logger.js';
 
 export interface NileServerOptions {
   apiKey: string;
@@ -105,27 +96,12 @@ export class NileMcpServer extends McpServer {
       (args) => deleteDatabase(args, this.toolContext)
     );
 
-    // Credential Management
+    // Connection Management
     this.tool(
-      'list-credentials',
-      'Lists all credentials for a database',
-      listCredentialsSchema.shape,
-      (args) => listCredentials(args, this.toolContext)
-    );
-
-    this.tool(
-      'create-credential',
-      'Creates a new credential for a database',
-      createCredentialSchema.shape,
-      (args) => createCredential(args, this.toolContext)
-    );
-
-    // Region Management
-    this.tool(
-      'list-regions',
-      'Lists all available regions for creating databases',
-      {},
-      () => listRegions(this.toolContext)
+      'get-connection-string',
+      'Gets a PostgreSQL connection string with fresh credentials',
+      getConnectionStringSchema.shape,
+      (args) => getConnectionString(args, this.toolContext)
     );
 
     // SQL Query Execution
