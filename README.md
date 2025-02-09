@@ -38,7 +38,7 @@ There are several ways to start the server:
    node dist/index.js
    ```
 
-2. **NPM Script** (if configured in package.json):
+2. **NPM Script**:
    ```bash
    npm start
    ```
@@ -79,6 +79,8 @@ Create a `.env` file in the root directory with your Nile credentials:
 NILE_API_KEY=your_api_key_here
 NILE_WORKSPACE_SLUG=your_workspace_slug
 ```
+
+To create a Nile API key, log in to your [Nile account](console.thenile.dev), click Workspaces in the top-left, select your workspace, and navigate to the Security section in the left menu.
 
 ## Using with Claude Desktop
 
