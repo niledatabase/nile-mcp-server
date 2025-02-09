@@ -116,6 +116,86 @@ Replace:
 - `your_api_key_here` with your Nile API key
 - `your_workspace_slug` with your Nile workspace slug
 
+## Using with Cursor
+
+### Setup
+
+1. Install [Cursor](https://cursor.sh) if you haven't already
+2. Build the project:
+   ```bash
+   npm run build
+   ```
+3. Open Cursor
+4. Go to Settings (⌘,) > Features > MCP Servers
+5. Click "Add New MCP Server"
+6. Configure the server:
+   - Name: `nile-database` (or any name you prefer)
+   - Command: 
+     ```bash
+     env NILE_API_KEY=your_key NILE_WORKSPACE_SLUG=your_workspace node /absolute/path/to/nile-mcp-server/dist/index.js
+     ```
+     Replace:
+     - `your_key` with your Nile API key
+     - `your_workspace` with your Nile workspace slug
+     - `/absolute/path/to` with the actual path to your project
+7. Click "Save"
+8. You should see a green indicator showing that the MCP server is connected
+9. Restart Cursor for the changes to take effect
+
+### Example Prompts
+
+After setting up the MCP server in Cursor, you can use natural language to interact with Nile databases. Here are some example prompts:
+
+#### Database Management
+```
+Create a new database named "my_app" in AWS_US_WEST_2 region
+
+List all my databases
+
+Get details for database "my_app"
+
+Delete database "test_db"
+```
+
+#### Creating Tables
+```
+Create a users table in my_app database with columns:
+- tenant_id (UUID, references tenants)
+- id (INTEGER)
+- email (VARCHAR, unique per tenant)
+- name (VARCHAR)
+- created_at (TIMESTAMP)
+
+Create a products table in my_app database with columns:
+- tenant_id (UUID, references tenants)
+- id (INTEGER)
+- name (VARCHAR)
+- price (DECIMAL)
+- description (TEXT)
+- created_at (TIMESTAMP)
+```
+
+#### Querying Data
+```
+Execute this query on my_app database:
+SELECT * FROM users WHERE tenant_id = 'your-tenant-id' LIMIT 5
+
+Run this query on my_app:
+INSERT INTO users (tenant_id, id, email, name) 
+VALUES ('tenant-id', 1, 'user@example.com', 'John Doe')
+
+Show me all products in my_app database with price > 100
+```
+
+#### Schema Management
+```
+Show me the schema for the users table in my_app database
+
+Add a new column 'status' to the users table in my_app database
+
+Create an index on the email column of the users table in my_app
+```
+
 ### Available Tools
 
 The server provides the following tools for interacting with Nile databases:
@@ -344,4 +424,5 @@ MIT License - See [LICENSE](LICENSE) for details.
 
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [Nile Database](https://thenile.dev)
-- [Claude Desktop](https://claude.ai/desktop) 
+- [Claude Desktop](https://claude.ai/desktop)
+- [Cursor](https://cursor.sh) 
