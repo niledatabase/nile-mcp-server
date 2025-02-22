@@ -35,6 +35,20 @@ export const executeSqlSchema = z.object({
   connectionString: z.string().describe('Connection string to use for the query').optional()
 });
 
+export const createTenantSchema = z.object({
+  databaseName: z.string().describe('Name of the database to create tenant in'),
+  name: z.string().describe('Name of the tenant')
+});
+
+export const deleteTenantSchema = z.object({
+  databaseName: z.string().describe('Name of the database'),
+  tenantId: z.string().describe('ID of the tenant to delete')
+});
+
+export const listTenantsSchema = z.object({
+  databaseName: z.string().describe('Name of the database to list tenants from')
+});
+
 // Tool Implementations
 export const createDatabase = async (
   args: z.infer<typeof createDatabaseSchema>,
@@ -471,6 +485,283 @@ export const executeSQL = async (
       content: [{
         type: 'text',
         text: error instanceof Error ? error.message : 'Unknown error occurred while executing SQL query'
+      }],
+      isError: true
+    };
+  }
+};
+
+export const createTenant = async (
+  args: z.infer<typeof createTenantSchema>,
+  context: ToolContext
+): Promise<CallToolResult> => {
+  try {
+    log.info('Creating tenant', { database: args.databaseName, name: args.name });
+    
+    // Get connection string for the database
+    const connResult = await getConnectionString({ databaseName: args.databaseName }, context);
+    if (connResult.isError) {
+      return connResult;
+    }
+
+    // Extract connection string
+    const resultText = connResult.content[0].text as string;
+    const connectionString = resultText.split('\n')[1].trim();
+
+    // Create client
+    const client = new pg.Client({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    try {
+      await client.connect();
+      log.info('Database connection established');
+
+      // Insert new tenant
+      const insertQuery = `
+        INSERT INTO tenants (name)
+        VALUES ($1)
+        RETURNING id, name, created, updated;
+      `;
+      
+      const result = await client.query(insertQuery, [args.name]);
+      const tenant = result.rows[0];
+
+      log.info('Tenant created successfully', tenant);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Tenant created successfully:\n` +
+            `ID: ${tenant.id}\n` +
+            `Name: ${tenant.name}\n` +
+            `Created: ${tenant.created}\n` +
+            `Updated: ${tenant.updated}`
+        }],
+        isError: false
+      };
+
+    } catch (error) {
+      const pgError = error as SqlQueryError;
+      let errorMessage = 'Failed to create tenant';
+      if (pgError.message) errorMessage += `: ${pgError.message}`;
+      if (pgError.detail) errorMessage += `\nDetail: ${pgError.detail}`;
+      if (pgError.hint) errorMessage += `\nHint: ${pgError.hint}`;
+      
+      log.error('Tenant creation error', pgError);
+      return {
+        content: [{
+          type: 'text',
+          text: errorMessage
+        }],
+        isError: true
+      };
+    } finally {
+      await client.end();
+      log.info('Database connection closed');
+    }
+
+  } catch (error) {
+    log.error('Error creating tenant', error);
+    return {
+      content: [{
+        type: 'text',
+        text: error instanceof Error ? error.message : 'Unknown error occurred while creating tenant'
+      }],
+      isError: true
+    };
+  }
+};
+
+export const deleteTenant = async (
+  args: z.infer<typeof deleteTenantSchema>,
+  context: ToolContext
+): Promise<CallToolResult> => {
+  try {
+    log.info('Deleting tenant', { database: args.databaseName, tenantId: args.tenantId });
+    
+    // Get connection string for the database
+    const connResult = await getConnectionString({ databaseName: args.databaseName }, context);
+    if (connResult.isError) {
+      return connResult;
+    }
+
+    // Extract connection string
+    const resultText = connResult.content[0].text as string;
+    const connectionString = resultText.split('\n')[1].trim();
+
+    // Create client
+    const client = new pg.Client({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    try {
+      await client.connect();
+      log.info('Database connection established');
+
+      // Delete tenant
+      const deleteQuery = `
+        DELETE FROM tenants
+        WHERE id = $1
+        RETURNING id, name;
+      `;
+      
+      const result = await client.query(deleteQuery, [args.tenantId]);
+      
+      if (result.rowCount === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Tenant with ID ${args.tenantId} not found`
+          }],
+          isError: true
+        };
+      }
+
+      const tenant = result.rows[0];
+      log.info('Tenant deleted successfully', tenant);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: `Tenant "${tenant.name}" (ID: ${tenant.id}) has been successfully deleted.`
+        }],
+        isError: false
+      };
+
+    } catch (error) {
+      const pgError = error as SqlQueryError;
+      let errorMessage = 'Failed to delete tenant';
+      if (pgError.message) errorMessage += `: ${pgError.message}`;
+      if (pgError.detail) errorMessage += `\nDetail: ${pgError.detail}`;
+      if (pgError.hint) errorMessage += `\nHint: ${pgError.hint}`;
+      
+      log.error('Tenant deletion error', pgError);
+      return {
+        content: [{
+          type: 'text',
+          text: errorMessage
+        }],
+        isError: true
+      };
+    } finally {
+      await client.end();
+      log.info('Database connection closed');
+    }
+
+  } catch (error) {
+    log.error('Error deleting tenant', error);
+    return {
+      content: [{
+        type: 'text',
+        text: error instanceof Error ? error.message : 'Unknown error occurred while deleting tenant'
+      }],
+      isError: true
+    };
+  }
+};
+
+export const listTenants = async (
+  args: z.infer<typeof listTenantsSchema>,
+  context: ToolContext
+): Promise<CallToolResult> => {
+  try {
+    log.info('Listing tenants', { database: args.databaseName });
+    
+    // Get connection string for the database
+    const connResult = await getConnectionString({ databaseName: args.databaseName }, context);
+    if (connResult.isError) {
+      return connResult;
+    }
+
+    // Extract connection string
+    const resultText = connResult.content[0].text as string;
+    const connectionString = resultText.split('\n')[1].trim();
+
+    // Create client
+    const client = new pg.Client({
+      connectionString,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+
+    try {
+      await client.connect();
+      log.info('Database connection established');
+
+      // List tenants
+      const listQuery = `
+        SELECT id, name, created, updated
+        FROM tenants
+        WHERE deleted IS NULL
+        ORDER BY created DESC;
+      `;
+      
+      const result = await client.query(listQuery);
+      
+      if (result.rows.length === 0) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'No tenants found'
+          }],
+          isError: false
+        };
+      }
+
+      // Create a formatted table string
+      let responseText = '| ID | Name | Created | Updated |\n';
+      responseText += '|---|---|---|---|\n';
+      
+      responseText += result.rows.map(tenant => {
+        return `| ${tenant.id} | ${tenant.name} | ${tenant.created} | ${tenant.updated} |`;
+      }).join('\n');
+
+      responseText += `\n\n${result.rowCount} tenants found.`;
+
+      log.info(`Found ${result.rowCount} tenants`);
+      
+      return {
+        content: [{
+          type: 'text',
+          text: responseText
+        }],
+        isError: false
+      };
+
+    } catch (error) {
+      const pgError = error as SqlQueryError;
+      let errorMessage = 'Failed to list tenants';
+      if (pgError.message) errorMessage += `: ${pgError.message}`;
+      if (pgError.detail) errorMessage += `\nDetail: ${pgError.detail}`;
+      if (pgError.hint) errorMessage += `\nHint: ${pgError.hint}`;
+      
+      log.error('Tenant listing error', pgError);
+      return {
+        content: [{
+          type: 'text',
+          text: errorMessage
+        }],
+        isError: true
+      };
+    } finally {
+      await client.end();
+      log.info('Database connection closed');
+    }
+
+  } catch (error) {
+    log.error('Error listing tenants', error);
+    return {
+      content: [{
+        type: 'text',
+        text: error instanceof Error ? error.message : 'Unknown error occurred while listing tenants'
       }],
       isError: true
     };

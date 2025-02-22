@@ -11,6 +11,12 @@ import {
   deleteDatabaseSchema,
   getConnectionStringSchema,
   executeSqlSchema,
+  createTenant,
+  deleteTenant,
+  listTenants,
+  createTenantSchema,
+  deleteTenantSchema,
+  listTenantsSchema,
   type ToolContext
 } from './tools.js';
 import { log } from './logger.js';
@@ -110,6 +116,28 @@ export class NileMcpServer extends McpServer {
       'Executes a SQL query on a Nile database',
       executeSqlSchema.shape,
       (args) => executeSQL(args, this.toolContext)
+    );
+
+    // Tenant Management
+    this.tool(
+      'create-tenant',
+      'Creates a new tenant in the specified database',
+      createTenantSchema.shape,
+      (args) => createTenant(args, this.toolContext)
+    );
+
+    this.tool(
+      'delete-tenant',
+      'Deletes a tenant from the specified database',
+      deleteTenantSchema.shape,
+      (args) => deleteTenant(args, this.toolContext)
+    );
+
+    this.tool(
+      'list-tenants',
+      'Lists all tenants in the specified database',
+      listTenantsSchema.shape,
+      (args) => listTenants(args, this.toolContext)
     );
 
     log.info('All tools registered successfully');
