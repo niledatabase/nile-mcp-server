@@ -18,9 +18,11 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1",
+    "@types/express": "^5.0.0",
     "@types/node": "^20.11.16",
     "@types/pg": "^8.11.11",
     "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "pg": "^8.13.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",

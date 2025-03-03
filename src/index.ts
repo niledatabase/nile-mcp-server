@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { NileMcpServer } from './server.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import dotenv from 'dotenv';
 import { log } from './logger.js';
+import { SSEHandler } from './handlers/sse.js';
+import { StdioHandler } from './handlers/stdio.js';
 
 log.startup('Starting Nile MCP Server...');
 
@@ -12,6 +12,8 @@ dotenv.config();
 
 const apiKey = process.env.NILE_API_KEY;
 const workspaceSlug = process.env.NILE_WORKSPACE_SLUG;
+const serverMode = process.env.MCP_SERVER_MODE || 'stdio';
+const serverPort = parseInt(process.env.MCP_SERVER_PORT || '3000', 10);
 
 if (!apiKey) {
   log.error('NILE_API_KEY environment variable is required');
@@ -25,25 +27,31 @@ if (!workspaceSlug) {
 
 log.startup('Environment variables loaded successfully', {
   workspaceSlug,
-  apiKeyPresent: !!apiKey
+  apiKeyPresent: !!apiKey,
+  serverMode,
+  serverPort
 });
 
-// Create and start server
-log.startup('Creating server instance...');
-const server = new NileMcpServer({
+const serverOptions = {
   apiKey,
   workspaceSlug
-});
-
-// Set up stdio transport
-log.startup('Setting up stdio transport...');
-const transport = new StdioServerTransport();
+};
 
 async function main() {
   try {
-    log.startup('Connecting server to transport...');
-    await server.connect(transport);
-    log.startup('Server started successfully');
+    log.startup(`Starting server in ${serverMode} mode...`);
+
+    if (serverMode === 'sse') {
+      const handler = new SSEHandler(serverOptions, serverPort);
+      await handler.start();
+    } else if (serverMode === 'stdio') {
+      const handler = new StdioHandler(serverOptions);
+      await handler.start();
+    } else {
+      log.error(`Unknown server mode: ${serverMode}`);
+      console.error('Available modes: sse, stdio (default)');
+      process.exit(1);
+    }
   } catch (error) {
     log.error('Server error:', error);
     process.exit(1);
@@ -53,13 +61,11 @@ async function main() {
 // Handle process signals
 process.on('SIGINT', async () => {
   log.info('Received SIGINT signal, shutting down...');
-  await server.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   log.info('Received SIGTERM signal, shutting down...');
-  await server.close();
   process.exit(0);
 });
 
