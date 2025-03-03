@@ -1,6 +1,6 @@
 # Nile MCP Server
 
-A Model Context Protocol (MCP) server implementation for Nile database operations. This server allows LLM applications to interact with Nile databases through a standardized interface.
+A Model Context Protocol (MCP) server implementation for Nile database platform. This server allows LLM applications to interact with Nile platform through a standardized interface.
 
 ## Features
 
@@ -144,6 +144,37 @@ Replace:
 8. You should see a green indicator showing that the MCP server is connected
 9. Restart Cursor for the changes to take effect
 
+### Server Modes
+
+The server supports two operational modes:
+
+#### STDIO Mode (Default)
+The default mode uses standard input/output for communication, making it compatible with Claude Desktop and Cursor integrations.
+
+#### SSE Mode
+Server-Sent Events (SSE) mode enables real-time, event-driven communication over HTTP.
+
+To enable SSE mode:
+1. Set `MCP_SERVER_MODE=sse` in your `.env` file
+2. The server will start an HTTP server (default port 3000)
+3. Connect to the SSE endpoint: `http://localhost:3000/sse`
+4. Send commands to: `http://localhost:3000/messages`
+
+Example SSE usage with curl:
+```bash
+# In terminal 1 - Listen for events
+curl -N http://localhost:3000/sse
+
+# In terminal 2 - Send commands
+curl -X POST http://localhost:3000/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "function",
+    "name": "list-databases",
+    "parameters": {}
+  }'
+```
+
 ### Example Prompts
 
 After setting up the MCP server in Cursor, you can use natural language to interact with Nile databases. Here are some example prompts:
@@ -273,6 +304,52 @@ The server provides the following tools for interacting with Nile databases:
      - Detailed error messages with hints
      - Support for using existing connection strings
    - Example: "Execute SELECT * FROM users LIMIT 5 on database 'my-app'"
+
+#### Resource Management
+
+1. **read-resource**
+   - Reads schema information for database resources (tables, views, etc.)
+   - Parameters:
+     - `databaseName` (string): Name of the database
+     - `resourceName` (string): Name of the resource (table/view)
+   - Returns: Detailed schema information including:
+     - Column names and types
+     - Primary keys and indexes
+     - Foreign key relationships
+     - Column descriptions and constraints
+   - Example: "Show me the schema for the users table in my-app"
+
+2. **list-resources**
+   - Lists all resources (tables, views) in a database
+   - Parameters:
+     - `databaseName` (string): Name of the database
+   - Returns: List of all resources with their types
+   - Example: "List all tables in my-app database"
+
+#### Tenant Management
+
+1. **list-tenants**
+   - Lists all tenants in a database
+   - Parameters:
+     - `databaseName` (string): Name of the database
+   - Returns: List of tenants with their IDs and metadata
+   - Example: "Show all tenants in my-app database"
+
+2. **create-tenant**
+   - Creates a new tenant in a database
+   - Parameters:
+     - `databaseName` (string): Name of the database
+     - `tenantName` (string): Name for the new tenant
+   - Returns: New tenant details including ID
+   - Example: "Create a tenant named 'acme-corp' in my-app"
+
+3. **delete-tenant**
+   - Deletes tenants in the database
+   - Parameters:
+     - `databaseName` (string): Name of the database
+     - `tenantName` (string): Name for the tenant
+   - Returns: Success if the tenant is deleted
+   - Example: "Delete tenant named 'acme-corp' in my-app"
 
 ### Example Usage
 
