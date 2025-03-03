@@ -1,0 +1,32 @@
+name: test
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
+
+      - name: Install deps
+        run: npm ci
+
+      - name: build
+        run: npm run build
+
+      - name: test
+        env:
+          NILEDB_USER: ${{ secrets.NILEDB_USER }}
+          NILEDB_PASSWORD: ${{ secrets.NILEDB_PASSWORD }}
+          NILEDB_POSTGRES_URL: ${{ secrets.NILEDB_POSTGRES_URL }}
+          NILEDB_API_URL: ${{ secrets.NILEDB_API_URL }}
+        run: npm test 
