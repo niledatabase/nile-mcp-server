@@ -19,6 +19,16 @@ A Model Context Protocol (MCP) server implementation for Nile database platform.
 
 ## Installation
 
+Install the stable version:
+```bash
+npm install @niledatabase/nile-mcp-server
+```
+
+For the latest alpha/preview version:
+```bash
+npm install @niledatabase/nile-mcp-server@alpha
+```
+
 ### Installing via Smithery
 
 To install nile-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@niledatabase/nile-mcp-server):
