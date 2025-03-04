@@ -48,7 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          # Configure npm registry first (this will be the default)
+          # Configure npm registry
           echo "registry=https://registry.npmjs.org/" > .npmrc
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
           

@@ -34,5 +34,32 @@
     "@types/jest": "^29.5.12",
     "jest": "^29.7.0",
     "ts-jest": "^29.1.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "release": {
+    "branches": [
+      {
+        "name": "alpha",
+        "prerelease": true
+      },
+      {
+        "name": "main"
+      }
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/npm",
+        {
+          "npmPublish": true,
+          "pkgRoot": "."
+        }
+      ],
+      "@semantic-release/github"
+    ]
   }
 }
