@@ -1,4 +1,4 @@
-name: Publish CLI Prerelease
+name: Publish MCP Prerelease
 
 on:
   push:
