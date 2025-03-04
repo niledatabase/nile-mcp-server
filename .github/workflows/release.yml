@@ -86,4 +86,5 @@ jobs:
           # Commit and push changes
           git add package.json package-lock.json
           git commit -m "chore: bump version to $NEW_VERSION for future alpha releases [skip ci]"
-          git push origin alpha 
+          git push origin alpha
+          git push origin alpha

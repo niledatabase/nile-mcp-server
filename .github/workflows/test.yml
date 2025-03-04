@@ -29,4 +29,4 @@ jobs:
           NILEDB_PASSWORD: ${{ secrets.NILEDB_PASSWORD }}
           NILEDB_POSTGRES_URL: ${{ secrets.NILEDB_POSTGRES_URL }}
           NILEDB_API_URL: ${{ secrets.NILEDB_API_URL }}
-        run: npm test 
+        run: npm test

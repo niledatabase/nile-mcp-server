@@ -60,7 +60,7 @@ describe('NileMcpServer', () => {
   describe('tools', () => {
     it('should list available tools', async () => {
       const tools = await client.listTools();
-      expect(tools.tools).toHaveLength(6);
+      expect(tools.tools).toHaveLength(11);
       
       // Database Management Tools
       expect(tools.tools).toContainEqual({
