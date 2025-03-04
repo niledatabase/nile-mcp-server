@@ -1,3 +1,10 @@
+# [1.0.0-alpha.13](https://github.com/niledatabase/nile-mcp-server/compare/v1.0.0-alpha.12...v1.0.0-alpha.13) (2025-03-04)
+
+
+### Features
+
+* update ([0eacde0](https://github.com/niledatabase/nile-mcp-server/commit/0eacde0fa5e280ba0dc49cf67f07c7afe3a11345))
+
 # [1.0.0-alpha.12](https://github.com/niledatabase/nile-mcp-server/compare/v1.0.0-alpha.11...v1.0.0-alpha.12) (2025-03-04)
 
 
