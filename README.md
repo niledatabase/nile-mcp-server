@@ -491,7 +491,7 @@ npm test
 The server uses structured logging with the following features:
 - Daily rotating log files
 - Separate debug logs
-- JSON formatted logs with timestamp
+- JSON formatted logs with timestamps
 - Console output for development
 - Log categories: info, error, debug, api, sql, startup
 
