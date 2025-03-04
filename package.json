@@ -3,9 +3,7 @@
   "version": "1.1.0-alpha.1",
   "description": "Nile MCP Server Implementation",
   "main": "dist/index.js",
-  "bin": {
-    "nile": "./dist/index.js"
-  },
+  "type": "module",
   "scripts": {
     "prebuild": "rm -rf dist",
     "build": "tsc",
