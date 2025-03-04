@@ -1,6 +1,6 @@
 {
   "name": "@niledatabase/nile-mcp-server",
-  "version": "1.0.0-alpha.12",
+  "version": "1.1.0",
   "description": "Nile MCP Server Implementation",
   "main": "dist/index.js",
   "type": "module",
