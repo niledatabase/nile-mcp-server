@@ -1,3 +1,10 @@
+# [1.0.0-alpha.12](https://github.com/niledatabase/nile-mcp-server/compare/v1.0.0-alpha.11...v1.0.0-alpha.12) (2025-03-04)
+
+
+### Features
+
+* do only npm ([c5fe406](https://github.com/niledatabase/nile-mcp-server/commit/c5fe406c684d8034637c04bf4626cd8df543570c))
+
 # [1.0.0-alpha.11](https://github.com/niledatabase/nile-mcp-server/compare/v1.0.0-alpha.10...v1.0.0-alpha.11) (2025-03-04)
 
 
