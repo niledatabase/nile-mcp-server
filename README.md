@@ -1,5 +1,7 @@
 # Nile MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@niledatabase/nile-mcp-server)](https://smithery.ai/server/@niledatabase/nile-mcp-server)
+
 A Model Context Protocol (MCP) server implementation for Nile database platform. This server allows LLM applications to interact with Nile platform through a standardized interface.
 
 ## Features
@@ -17,6 +19,15 @@ A Model Context Protocol (MCP) server implementation for Nile database platform.
 
 ## Installation
 
+### Installing via Smithery
+
+To install nile-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@niledatabase/nile-mcp-server):
+
+```bash
+npx -y @smithery/cli install @niledatabase/nile-mcp-server --client claude
+```
+
+### Manual Installation
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/nile-mcp-server.git
