@@ -1,4 +1,4 @@
-name: Publish CLI Prerelease
+name: Publish MCP Prerelease
 
 on:
   push:
@@ -51,8 +51,6 @@ jobs:
           # Configure both npm and GitHub Package registries
           echo "registry=https://registry.npmjs.org/" > .npmrc
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-          echo "@niledatabase:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
           
           # Run semantic-release with prerelease configuration
           npx semantic-release 
