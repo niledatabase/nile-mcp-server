@@ -55,4 +55,4 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
           
           # Run semantic-release with prerelease configuration
-          npx semantic-release
+          npx semantic-release 
