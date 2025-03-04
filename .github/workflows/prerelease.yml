@@ -48,11 +48,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          # Configure both npm and GitHub Package registries
+          # Configure npm registry first (this will be the default)
           echo "registry=https://registry.npmjs.org/" > .npmrc
           echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
-          echo "@niledatabase:registry=https://npm.pkg.github.com" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
           
           # Run semantic-release with prerelease configuration
           npx semantic-release
+          
+          # After publishing to npm, publish to GitHub Packages
+          echo "@niledatabase:registry=https://npm.pkg.github.com" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=$GITHUB_TOKEN" >> .npmrc
+          npm publish --registry https://npm.pkg.github.com
