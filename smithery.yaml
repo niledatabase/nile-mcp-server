@@ -1,0 +1,31 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - nileApiKey
+      - nileWorkspaceSlug
+    properties:
+      nileApiKey:
+        type: string
+        description: Your Nile API key.
+      nileWorkspaceSlug:
+        type: string
+        description: Your Nile workspace slug.
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: {
+        NILE_API_KEY: config.nileApiKey,
+        NILE_WORKSPACE_SLUG: config.nileWorkspaceSlug
+      }
+    })
+  exampleConfig:
+    nileApiKey: example_api_key_123
+    nileWorkspaceSlug: example_workspace_slug
