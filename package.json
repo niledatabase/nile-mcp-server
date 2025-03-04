@@ -8,12 +8,8 @@
   },
   "scripts": {
     "prebuild": "rm -rf dist",
-    "build": "tsc && npm run copy-files",
-    "postbuild": "chmod +x dist/index.js",
-    "copy-files": "mkdir -p dist/lib && cp src/lib/callback.html dist/lib/ && cp src/image/logo.jpg dist/lib/",
+    "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "ts-node src/index.ts",
-    "lint": "eslint . --ext .ts",
     "test": "jest"
   },
   "keywords": [
