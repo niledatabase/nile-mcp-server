@@ -469,7 +469,7 @@ The following npm scripts are available:
 - `npm start`: Starts the server in production mode
 - `npm run dev`: Starts the server in development mode with auto-rebuild
 - `npm test`: Runs the test suite
-- `npm run lint`: Runs ESLint for code quality
+- `npm run lint`: Runs ESLint for code quality checking
 - `npm run clean`: Removes build artifacts
 
 ### Testing
