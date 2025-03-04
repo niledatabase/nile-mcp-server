@@ -3,10 +3,17 @@
   "version": "1.1.0-alpha.1",
   "description": "Nile MCP Server Implementation",
   "main": "dist/index.js",
-  "type": "module",
+  "bin": {
+    "nile": "./dist/index.js"
+  },
   "scripts": {
-    "build": "tsc",
+    "prebuild": "rm -rf dist",
+    "build": "tsc && npm run copy-files",
+    "postbuild": "chmod +x dist/index.js",
+    "copy-files": "mkdir -p dist/lib && cp src/lib/callback.html dist/lib/ && cp src/image/logo.jpg dist/lib/",
     "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "lint": "eslint . --ext .ts",
     "test": "jest"
   },
   "keywords": [
@@ -14,7 +21,7 @@
     "mcp",
     "database"
   ],
-  "author": "",
+  "author": "Nile",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.4.1",
@@ -39,6 +46,10 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/niledatabase/nile-mcp-server.git"
+  },
   "release": {
     "branches": [
       {
@@ -52,6 +63,7 @@
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
       [
         "@semantic-release/npm",
         {
@@ -59,7 +71,7 @@
           "pkgRoot": "."
         }
       ],
-      "@semantic-release/github"
+      "@semantic-release/git"
     ]
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
