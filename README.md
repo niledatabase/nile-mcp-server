@@ -12,10 +12,9 @@
   🔵
   <a href="https://thenile.dev">Website</a>
   🔵 
-  <a href="https://github.com/niledatabase/niledatabase/issues">Issues</a>
+  <a href="https://github.com/orgs/niledatabase/discussions">Issues</a>
  </p>
 </p>
-# Nile MCP Server
 
 [![smithery badge](https://smithery.ai/badge/@niledatabase/nile-mcp-server)](https://smithery.ai/server/@niledatabase/nile-mcp-server)
 
