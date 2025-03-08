@@ -1,3 +1,4 @@
+![nilemcp](https://github.com/user-attachments/assets/bfd64d71-7bb8-4d33-a748-c11be6cde4d5)
 # Nile MCP Server
 
 [![smithery badge](https://smithery.ai/badge/@niledatabase/nile-mcp-server)](https://smithery.ai/server/@niledatabase/nile-mcp-server)
