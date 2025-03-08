@@ -1,4 +1,20 @@
-![nilemcp](https://github.com/user-attachments/assets/bfd64d71-7bb8-4d33-a748-c11be6cde4d5)
+<p align="center">
+ <a href="https://thenile.dev" target="_blank"><img width="96px" src="https://www.thenile.dev/about-logo.png" /></a>
+ <h2 align="center">Nile MCP Server
+  <br/>
+  <img src="https://img.shields.io/npm/v/@niledatabase/server"/>
+ </h2>
+ <p align="center">
+  <a href="https://thenile.dev/docs/ai-embeddings/nile-mcp-server"><strong>Learn more ↗️</strong></a>
+  <br />
+  <br />
+  <a href="https://discord.gg/akRKRPKA">Discord</a>
+  🔵
+  <a href="https://thenile.dev">Website</a>
+  🔵 
+  <a href="https://github.com/niledatabase/niledatabase/issues">Issues</a>
+ </p>
+</p>
 # Nile MCP Server
 
 [![smithery badge](https://smithery.ai/badge/@niledatabase/nile-mcp-server)](https://smithery.ai/server/@niledatabase/nile-mcp-server)
