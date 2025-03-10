@@ -44,14 +44,7 @@ For the latest alpha/preview version:
 ```bash
 npm install @niledatabase/nile-mcp-server@alpha
 ```
-
-### Installing via Smithery
-
-To install nile-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@niledatabase/nile-mcp-server):
-
-```bash
-npx -y @smithery/cli install @niledatabase/nile-mcp-server --client claude
-```
+This will install @niledatabase/nile-mcp-server in your node_modules folder. For example: node_modules/@niledatabase/nile-mcp-server/dist/
 
 ### Manual Installation
 ```bash
@@ -74,13 +67,7 @@ There are several ways to start the server:
    ```bash
    node dist/index.js
    ```
-
-2. **NPM Script**:
-   ```bash
-   npm start
-   ```
-
-3. **Development Mode** (with auto-rebuild):
+2. **Development Mode** (with auto-rebuild):
    ```bash
    npm run dev
    ```
