@@ -1,11 +1,15 @@
-# [1.3.0](https://github.com/niledatabase/nile-mcp-server/compare/v1.2.0...v1.3.0) (2025-03-04)
+# [1.4.0-alpha.1](https://github.com/niledatabase/nile-mcp-server/compare/v1.3.0...v1.4.0-alpha.1) (2025-03-10)
 
 
 ### Features
 
-* new changes ([3c4992b](https://github.com/niledatabase/nile-mcp-server/commit/3c4992bd30af887982bb89527700ea3d129f6996))
-* release main ([2be649b](https://github.com/niledatabase/nile-mcp-server/commit/2be649b584212b0d47d65f837def47dc3a474e6e))
-* update alpha ([b874c43](https://github.com/niledatabase/nile-mcp-server/commit/b874c43725f5cc13d306d59254f5ad24a1aca5e4))
+* update readme ([d5d3725](https://github.com/niledatabase/nile-mcp-server/commit/d5d3725c5deaa09819416e2f5ec38471da3e9d48))
+
+# [1.3.0-alpha.2](https://github.com/niledatabase/nile-mcp-server/compare/v1.3.0-alpha.1...v1.3.0-alpha.2) (2025-03-04)
+
+### Features
+
+* update readme ([d5d3725](https://github.com/niledatabase/nile-mcp-server/commit/d5d3725c5deaa09819416e2f5ec38471da3e9d48))
 
 # [1.3.0-alpha.1](https://github.com/niledatabase/nile-mcp-server/compare/v1.2.0...v1.3.0-alpha.1) (2025-03-04)
 

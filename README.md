@@ -1,4 +1,22 @@
-# Nile MCP Server
+<p align="center">
+ <a href="https://thenile.dev" target="_blank"><img width="96px" src="https://www.thenile.dev/about-logo.png" /></a>
+ <h2 align="center">Nile MCP Server
+  <br/>
+  <img src="https://img.shields.io/npm/v/@niledatabase/server"/>
+ </h2>
+ <p align="center">
+  <a href="https://thenile.dev/docs/ai-embeddings/nile-mcp-server"><strong>Learn more ↗️</strong></a>
+  <br />
+  <br />
+  <a href="https://discord.gg/akRKRPKA">Discord</a>
+  🔵
+  <a href="https://thenile.dev">Website</a>
+  🔵 
+  <a href="https://github.com/orgs/niledatabase/discussions">Issues</a>
+ </p>
+</p>
+
+[![smithery badge](https://smithery.ai/badge/@niledatabase/nile-mcp-server)](https://smithery.ai/server/@niledatabase/nile-mcp-server)
 
 A Model Context Protocol (MCP) server implementation for Nile database platform. This server allows LLM applications to interact with Nile platform through a standardized interface.
 
@@ -17,6 +35,25 @@ A Model Context Protocol (MCP) server implementation for Nile database platform.
 
 ## Installation
 
+Install the stable version:
+```bash
+npm install @niledatabase/nile-mcp-server
+```
+
+For the latest alpha/preview version:
+```bash
+npm install @niledatabase/nile-mcp-server@alpha
+```
+
+### Installing via Smithery
+
+To install nile-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@niledatabase/nile-mcp-server):
+
+```bash
+npx -y @smithery/cli install @niledatabase/nile-mcp-server --client claude
+```
+
+### Manual Installation
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/nile-mcp-server.git
