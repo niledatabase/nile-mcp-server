@@ -58,6 +58,8 @@ npm install
 # Build the project
 npm run build
 ```
+### Other mcp package managers
+1. npx @michaellatman/mcp-get@latest install @niledatabase/nile-mcp-server
 
 ## Starting the Server
 
