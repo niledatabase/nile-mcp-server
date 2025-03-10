@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/niledatabase/nile-mcp-server/compare/v1.3.0...v1.4.0) (2025-03-10)
+
+
+### Features
+
+* update readme ([d5d3725](https://github.com/niledatabase/nile-mcp-server/commit/d5d3725c5deaa09819416e2f5ec38471da3e9d48))
+
 # [1.4.0-alpha.1](https://github.com/niledatabase/nile-mcp-server/compare/v1.3.0...v1.4.0-alpha.1) (2025-03-10)
 
 
